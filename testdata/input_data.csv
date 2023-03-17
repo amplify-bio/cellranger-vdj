@@ -1,0 +1,2 @@
+gem,fastq_id,fastqs,feature_types
+gem1,pbmc_1k_v3_mini,s3://ambys-10xgenomics-pipeline/testdata,gex

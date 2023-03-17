@@ -1,0 +1,20 @@
+{
+    "name": "klkeys/cellranger-vdj",
+    "homePage": "https://github.com/klkeys/cellranger-vdj",
+    "repos": {
+        "nf-core/modules": {
+            "custom/dumpsoftwareversions": {
+                "git_sha": "3aacd46da2b221ed47aaa05c413a828538d2c2ae"
+            },
+            "multiqc": {
+                "git_sha": "3aacd46da2b221ed47aaa05c413a828538d2c2ae"
+            },
+            "trimgalore": {
+                "git_sha": "3aacd46da2b221ed47aaa05c413a828538d2c2ae"
+            },
+            "umitools/extract": {
+                "git_sha": "81ed0e0ff2a138cd65146d167f614fa4f5871c8b"
+            }
+        }
+    }
+}
