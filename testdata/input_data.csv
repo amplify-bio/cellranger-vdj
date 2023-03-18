@@ -1,2 +1,2 @@
 gem,fastq_id,fastqs,feature_types
-gem1,pbmc_1k_v3_mini,s3://ambys-10xgenomics-pipeline/testdata,gex
+gem1,subsampled_sc5p_v2_hs_B_1k_b,s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs,vdj_b
