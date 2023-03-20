@@ -37,12 +37,6 @@
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
-                },
-                "skip_aggr": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-barcode",
-                    "description": "Skips running `cellranger aggr`.",
-                    "hidden": true
                 }
             }
         },
@@ -66,14 +60,14 @@
                     "description": "Docker image with `cellranger` included.",
                     "fa_icon": "fa fa-box",
                     "help_text": "Any suitable Docker image with `cellranger` will do. Ensure that the image can be pulled from the Docker repository. If specifying a private Docker store, such as AWS ECR, then Nextflow Tower needs access credentials to pull containers.",
-                    "default": "nfcore/cellranger:7.1.0"
+                    "default": "docker.io/nfcore/cellranger:7.1.0"
                 },
                 "docker_fastqc": {
                     "type": "string",
                     "description": "Docker image for FastQC.",
                     "fa_icon": "fa fa-box",
                     "help_text": "Any suitable Docker image with FastQC included. Beware throttling if pulling from DockerHub. If specifying a private Docker store, such as AWS ECR, then Nextflow Tower needs access credentials to pull containers.",
-                    "default": "hub.docker.com/biocontainers/fastqc",
+                    "default": "docker.io/biocontainers/fastqc",
                     "hidden": true
                 },
                 "docker_multiqc": {
@@ -81,7 +75,7 @@
                     "description": "Docker image for MultiQC.",
                     "fa_icon": "fa fa-box",
                     "help_text": "Any suitable Docker image with MultiQC included. Beware throttling if pulling from DockerHub. If specifying a private Docker store, such as AWS ECR, then Nextflow Tower needs access credentials to pull containers.",
-                    "default": "hub.docker.com/ewels/multiqc:v1.11",
+                    "default": "docker.io/ewels/multiqc:v1.11",
                     "hidden": true
                 }
             }

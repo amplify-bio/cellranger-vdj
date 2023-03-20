@@ -6,7 +6,7 @@ options        = initOptions(params.options)
 
 process CELLRANGER_VDJ {
     tag "$meta.gem"
-    label 'process_high'
+    label 'cellranger'
 
     container "nfcore/cellranger:7.1.0"
 

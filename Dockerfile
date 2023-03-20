@@ -1,4 +1,7 @@
+# example Dockerfile
 # based upon https://github.com/melaniedavila/cellranger-aws-pipeline/blob/ab304fcd61d58ac8e3243254029d53926ea2df38/Dockerfile#L1
+# mostly used if a specific CellRanger version is needed
+# or if you must pull from your own Dockerstore
 
 # 10x officially supports ubuntu or centos/redhat
 FROM ubuntu:20.04

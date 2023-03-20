@@ -45,18 +45,16 @@ A sample sheet containing sample metadata and paths to the input fastq files is 
 Example sample sheet:
 
 ```tsv
-GEM Sample  Lane  R1  R2  I1
-GEM1  pbmc1_1k_v3_mini  L001  pbmc1_1k_v3_mini_S1_L001_R1_001.fastq.gz  pbmc1_1k_v3_mini_S1_L001_R2_001.fastq.gz  pbmc1_1k_v3_mini_S1_L001_I1_001.fastq.gz
-GEM1  pbmc1_1k_v3_mini  L002  pbmc1_1k_v3_mini_S1_L002_R1_001.fastq.gz  pbmc1_1k_v3_mini_S1_L002_R2_001.fastq.gz  pbmc1_1k_v3_mini_S1_L002_I1_001.fastq.gz
-GEM2  pbmc2_1k_v3_mini  L001  pbmc2_1k_v3_mini_S1_L002_R1_001.fastq.gz  pbmc2_1k_v3_mini_S1_L002_R2_001.fastq.gz  pbmc2_1k_v3_mini_S1_L002_I1_001.fastq.gz
+gem fastq_id    fastqs  feature_types 
+gem1    subsampled_sc5p_v2_hs_B_1k_b    s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs  vdj_b
+gem1    subsampled_sc5p_v2_hs_B_1k_b    s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs  vdj_b
+gem2    subsampled_sc5p_v2_hs_B_1k_b    s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs  vdj_b
 ```
 
-* GEM: GEM ID. If samples were pooled in the same GEM, but sequenced in different lanes, then they will be processed together with `cellranger vdj`. For more info, see [here](https://support.10xgenomics.com/single-cell-vdj/software/pipelines/latest/what-is-cell-ranger).
-* Sample: Sample ID.
-* Lane: Lane ID. If Fastq files have the same sample ID and different lane IDs, they will be merged automatically by `cellranger vdj`.
-* R1: First mate (R1) of fastq files.
-* R2: Second mate (R2) of fastq files.
-* I1: Index file (optional). If index file is provided, please set the flag `--index_file true`.
+* `gem`: GEM ID. If samples were pooled in the same GEM, but sequenced in different lanes, then they will be processed together with `cellranger vdj`. For more info, see [here](https://support.10xgenomics.com/single-cell-vdj/software/pipelines/latest/what-is-cell-ranger).
+* `fastq\_id`: Sample ID.
+* `fastqs`: The directory where FASTQ files are stored. Can be a local path or a (full) cloud storage path.
+* `feature_types`: Either `vdj_b` or `vdj_t`. Ignored for now.
 
 ### Genome reference data
 
@@ -64,27 +62,11 @@ Genome reference data can be provided in several ways.
 
 #### Using 10x genomics pre-built references
 
-The reference data provided by 10x genomics is automatically downloaded in this pipeline. Only human (`GRCh38`) and mouse references (`mm10`) are supported. Please set the following:
-
-* Human data: `--genome GRCh38`
-* Mouse data: `--genome mm10`
-
-If you want to save these references for use in other analysis, you can provide the parameter `--save_references`. Then in your next run, the path to the saved references can be provided with the `--reference` parameter.
-
-#### Providing custom fasta and gtf files
-
-To build custom references as part of the pipeline, you can provide a fasta and a gtf file (best is from Ensembl):
-
+The pipeline requires a V(D)J reference. 10X Genomics provides a prebuilt one [here](https://support.10xgenomics.com/single-cell-vdj/software/downloads/latest).
+Download it and stash it in a place where the pipeline can find it, either local storage or cloud storage.
+Point the pipeline to the saved reference with
 ```bash
---gtf gtf_file.gtf --fasta genome_fasta.fa --reference_name my_custom_reference
-```
-
-#### Providing a pre-built reference
-
-If you have already a pre-built reference folder, it can also be directly provided:
-
-```bash
---prebuilt_reference reference
+    --transcriptome_reference path/to/reference
 ```
 
 ## Core Nextflow arguments
