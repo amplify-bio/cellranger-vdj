@@ -5,7 +5,7 @@ params.options = [:]
 options        = initOptions(params.options)
 
 process CELLRANGER_VDJ {
-    tag "$meta.id"
+    tag "${meta.gem}-${meta.id}"
     label 'cellranger'
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
@@ -23,9 +23,9 @@ process CELLRANGER_VDJ {
     path  reference, stageAs: 'reference'
 
     output:
-    tuple val(meta), path("sample-${meta.id}/outs/*")                        , emit: outs
-    tuple val(meta), path("*${meta.id}_${meta.id}/outs/metrics_summary.csv") , emit: summary_csv
-    path "versions.yml"                                                       , emit: versions
+    tuple val(meta), path("*${meta.gem}-${meta.id}/outs/*")                  , emit: outs
+    tuple val(meta), path("*${meta.gem}-${meta.id}/outs/metrics_summary.csv"), emit: summary_csv
+    path "versions.yml"                                                      , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

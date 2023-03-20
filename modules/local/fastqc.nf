@@ -15,16 +15,16 @@ process FASTQC {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/fastqc:0.11.9--0"
     } else {
-        container "quay.io/biocontainers/fastqc:0.11.9--0"
+        container params.docker_fastqc 
     }
 
     input:
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("*/*.html"), emit: html
-    tuple val(meta), path("*/*.zip") , emit: zip
-    path  "versions.yml"             , emit: versions
+    tuple val(meta), path("*.html"), emit: html
+    tuple val(meta), path("*.zip") , emit: zip
+    path  "versions.yml"           , emit: versions
 
     script:
     def software = getSoftwareName(task.process)
@@ -33,6 +33,17 @@ process FASTQC {
     cat <<-END_VERSIONS > versions.yml
     ${getProcessName(task.process)}:
         ${getSoftwareName(task.process)}: \$( fastqc --version | sed -e "s/FastQC v//g" )
+    END_VERSIONS
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.html
+    touch ${prefix}.zip
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        fastqc: \$( fastqc --version | sed -e "s/FastQC v//g" )
     END_VERSIONS
     """
 }

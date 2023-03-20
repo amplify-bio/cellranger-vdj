@@ -1,8 +1,4 @@
-//
-// This file holds several functions used within the nf-core pipeline template.
-//
-
-import org.yaml.snakeyaml.Yaml
+mport org.yaml.snakeyaml.Yaml
 
 class NfcoreTemplate {
 
@@ -19,40 +15,45 @@ class NfcoreTemplate {
     }
 
     //
-    // Check params.hostnames
+    //  Warn if a -profile or Nextflow config has not been provided to run the pipeline
     //
-    public static void hostName(workflow, params, log) {
-        Map colors = logColours(params.monochrome_logs)
-        if (params.hostnames) {
-            try {
-                def hostname = "hostname".execute().text.trim()
-                params.hostnames.each { prof, hnames ->
-                    hnames.each { hname ->
-                        if (hostname.contains(hname) && !workflow.profile.contains(prof)) {
-                            log.info "=${colors.yellow}====================================================${colors.reset}=\n" +
-                                "${colors.yellow}WARN: You are running with `-profile $workflow.profile`\n" +
-                                "      but your machine hostname is ${colors.white}'$hostname'${colors.reset}.\n" +
-                                "      ${colors.yellow_bold}Please use `-profile $prof${colors.reset}`\n" +
-                                "=${colors.yellow}====================================================${colors.reset}="
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.warn "[$workflow.manifest.name] Could not determine 'hostname' - skipping check. Reason: ${e.message}."
-            }
+    public static void checkConfigProvided(workflow, log) {
+        if (workflow.profile == 'standard' && workflow.configFiles.size() <= 1) {
+            log.warn "[$workflow.manifest.name] You are attempting to run the pipeline without any custom configuration!\n\n" +
+                    "This will be dependent on your local compute environment but can be achieved via one or more of the following:\n" +
+                    "   (1) Using an existing pipeline profile e.g. `-profile docker` or `-profile singularity`\n" +
+                    "   (2) Using an existing nf-core/configs for your Institution e.g. `-profile crick` or `-profile uppmax`\n" +
+                    "   (3) Using your own local custom config e.g. `-c /path/to/your/custom.config`\n\n" +
+                    "Please refer to the quick start section and usage docs for the pipeline.\n "
         }
+    }
+
+    //
+    // Generate version string
+    //
+    public static String version(workflow) {
+        String version_string = ""
+
+        if (workflow.manifest.version) {
+            def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
+            version_string += "${prefix_v}${workflow.manifest.version}"
+        }
+
+        if (workflow.commitId) {
+            def git_shortsha = workflow.commitId.substring(0, 7)
+            version_string += "-g${git_shortsha}"
+        }
+
+        return version_string
     }
 
     //
     // Construct and send completion email
     //
-    public static void email(workflow, params, summary_params, projectDir, log, multiqc_report=[], fail_percent_mapped=[:]) {
+    public static void email(workflow, params, summary_params, projectDir, log, multiqc_report=[]) {
 
         // Set up the e-mail variables
         def subject = "[$workflow.manifest.name] Successful: $workflow.runName"
-        if (fail_percent_mapped.size() > 0) {
-            subject = "[$workflow.manifest.name] Partially successful (${fail_percent_mapped.size()} skipped): $workflow.runName"
-        }
         if (!workflow.success) {
             subject = "[$workflow.manifest.name] FAILED: $workflow.runName"
         }
@@ -75,24 +76,22 @@ class NfcoreTemplate {
         misc_fields['Nextflow Compile Timestamp'] = workflow.nextflow.timestamp
 
         def email_fields = [:]
-        email_fields['version']             = workflow.manifest.version
-        email_fields['runName']             = workflow.runName
-        email_fields['success']             = workflow.success
-        email_fields['dateComplete']        = workflow.complete
-        email_fields['duration']            = workflow.duration
-        email_fields['exitStatus']          = workflow.exitStatus
-        email_fields['errorMessage']        = (workflow.errorMessage ?: 'None')
-        email_fields['errorReport']         = (workflow.errorReport ?: 'None')
-        email_fields['commandLine']         = workflow.commandLine
-        email_fields['projectDir']          = workflow.projectDir
-        email_fields['summary']             = summary << misc_fields
-        email_fields['fail_percent_mapped'] = fail_percent_mapped.keySet()
-        email_fields['min_mapped_reads']    = params.min_mapped_reads
+        email_fields['version']      = NfcoreTemplate.version(workflow)
+        email_fields['runName']      = workflow.runName
+        email_fields['success']      = workflow.success
+        email_fields['dateComplete'] = workflow.complete
+        email_fields['duration']     = workflow.duration
+        email_fields['exitStatus']   = workflow.exitStatus
+        email_fields['errorMessage'] = (workflow.errorMessage ?: 'None')
+        email_fields['errorReport']  = (workflow.errorReport ?: 'None')
+        email_fields['commandLine']  = workflow.commandLine
+        email_fields['projectDir']   = workflow.projectDir
+        email_fields['summary']      = summary << misc_fields
 
         // On success try attach the multiqc report
         def mqc_report = null
         try {
-            if (workflow.success && !params.skip_multiqc) {
+            if (workflow.success) {
                 mqc_report = multiqc_report.getVal()
                 if (mqc_report.getClass() == ArrayList && mqc_report.size() >= 1) {
                     if (mqc_report.size() > 1) {
@@ -162,41 +161,75 @@ class NfcoreTemplate {
     }
 
     //
+    // Construct and send a notification to a web server as JSON
+    // e.g. Microsoft Teams and Slack
+    //
+    public static void IM_notification(workflow, params, summary_params, projectDir, log) {
+        def hook_url = params.hook_url
+
+        def summary = [:]
+        for (group in summary_params.keySet()) {
+            summary << summary_params[group]
+        }
+
+        def misc_fields = [:]
+        misc_fields['start']                                = workflow.start
+        misc_fields['complete']                             = workflow.complete
+        misc_fields['scriptfile']                           = workflow.scriptFile
+        misc_fields['scriptid']                             = workflow.scriptId
+        if (workflow.repository) misc_fields['repository']  = workflow.repository
+        if (workflow.commitId)   misc_fields['commitid']    = workflow.commitId
+        if (workflow.revision)   misc_fields['revision']    = workflow.revision
+        misc_fields['nxf_version']                          = workflow.nextflow.version
+        misc_fields['nxf_build']                            = workflow.nextflow.build
+        misc_fields['nxf_timestamp']                        = workflow.nextflow.timestamp
+
+        def msg_fields = [:]
+        msg_fields['version']      = NfcoreTemplate.version(workflow)
+        msg_fields['runName']      = workflow.runName
+        msg_fields['success']      = workflow.success
+        msg_fields['dateComplete'] = workflow.complete
+        msg_fields['duration']     = workflow.duration
+        msg_fields['exitStatus']   = workflow.exitStatus
+        msg_fields['errorMessage'] = (workflow.errorMessage ?: 'None')
+        msg_fields['errorReport']  = (workflow.errorReport ?: 'None')
+        msg_fields['commandLine']  = workflow.commandLine.replaceFirst(/ +--hook_url +[^ ]+/, "")
+        msg_fields['projectDir']   = workflow.projectDir
+        msg_fields['summary']      = summary << misc_fields
+
+        // Render the JSON template
+        def engine       = new groovy.text.GStringTemplateEngine()
+        // Different JSON depending on the service provider
+        // Defaults to "Adaptive Cards" (https://adaptivecards.io), except Slack which has its own format
+        def json_path     = hook_url.contains("hooks.slack.com") ? "slackreport.json" : "adaptivecard.json"
+        def hf            = new File("$projectDir/assets/${json_path}")
+        def json_template = engine.createTemplate(hf).make(msg_fields)
+        def json_message  = json_template.toString()
+
+        // POST
+        def post = new URL(hook_url).openConnection();
+        post.setRequestMethod("POST")
+        post.setDoOutput(true)
+        post.setRequestProperty("Content-Type", "application/json")
+        post.getOutputStream().write(json_message.getBytes("UTF-8"));
+        def postRC = post.getResponseCode();
+        if (! postRC.equals(200)) {
+            log.warn(post.getErrorStream().getText());
+        }
+    }
+
+    //
     // Print pipeline summary on completion
     //
-    public static void summary(workflow, params, log, fail_percent_mapped=[:], pass_percent_mapped=[:]) {
+    public static void summary(workflow, params, log) {
         Map colors = logColours(params.monochrome_logs)
-
-        def total_aln_count = pass_percent_mapped.size() + fail_percent_mapped.size()
-        if (pass_percent_mapped.size() > 0) {
-            def idx = 0
-            def samp_aln = ''
-            for (samp in pass_percent_mapped) {
-                samp_aln += "    ${samp.value}%: ${samp.key}\n"
-                idx += 1
-                if (idx > 5) {
-                    samp_aln += "    ..see pipeline reports for full list\n"
-                    break;
-                }
-            }
-            log.info "-${colors.purple}[$workflow.manifest.name]${colors.green} ${pass_percent_mapped.size()}/$total_aln_count samples passed STAR ${params.min_mapped_reads}% mapped threshold:\n${samp_aln}${colors.reset}-"
-        }
-        if (fail_percent_mapped.size() > 0) {
-            def samp_aln = ''
-            for (samp in fail_percent_mapped) {
-                samp_aln += "    ${samp.value}%: ${samp.key}\n"
-            }
-            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} ${fail_percent_mapped.size()}/$total_aln_count samples skipped since they failed STAR ${params.min_mapped_reads}% mapped threshold:\n${samp_aln}${colors.reset}-"
-        }
-
         if (workflow.success) {
             if (workflow.stats.ignoredCount == 0) {
                 log.info "-${colors.purple}[$workflow.manifest.name]${colors.green} Pipeline completed successfully${colors.reset}-"
             } else {
-                log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Pipeline completed successfully, but with errored process(es) ${colors.reset}-"
+                log.info "-${colors.purple}[$workflow.manifest.name]${colors.yellow} Pipeline completed successfully, but with errored process(es) ${colors.reset}-"
             }
         } else {
-            hostName(workflow, params, log)
             log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Pipeline completed with errors${colors.reset}-"
         }
     }
@@ -282,6 +315,7 @@ class NfcoreTemplate {
     //
     public static String logo(workflow, monochrome_logs) {
         Map colors = logColours(monochrome_logs)
+        String workflow_version = NfcoreTemplate.version(workflow)
         String.format(
             """\n
             ${dashedLine(monochrome_logs)}
@@ -290,7 +324,7 @@ class NfcoreTemplate {
             ${colors.blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${colors.yellow}}  {${colors.reset}
             ${colors.blue}  | \\| |       \\__, \\__/ |  \\ |___     ${colors.green}\\`-._,-`-,${colors.reset}
                                                     ${colors.green}`._,._,\'${colors.reset}
-            ${colors.purple}  ${workflow.manifest.name} v${workflow.manifest.version}${colors.reset}
+            ${colors.purple}  ${workflow.manifest.name} ${workflow_version}${colors.reset}
             ${dashedLine(monochrome_logs)}
             """.stripIndent()
         )

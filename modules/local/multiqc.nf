@@ -17,7 +17,7 @@ process MULTIQC {
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/multiqc:1.11--pyhdfd78af_0"
     } else {
-        container "quay.io/biocontainers/multiqc:1.11--pyhdfd78af_0"
+        container params.docker_multiqc 
     }
 
     input:

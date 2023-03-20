@@ -1,0 +1,5 @@
+# ignore anything from hidden Nextflow folder
+# this allows for local testing in Git repo
+.nextflow/*
+.nextflow*
+work/*
