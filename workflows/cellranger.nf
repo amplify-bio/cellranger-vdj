@@ -56,7 +56,6 @@ if (params.save_trimmed)  { trimgalore_options.publish_files.put('fq.gz','') }
 include { INPUT_CHECK                 } from '../subworkflows/local/input_check'                           addParams( options: [:]                                                                                                          )
 include { FASTQC_UMITOOLS_TRIMGALORE  } from '../subworkflows/nf-core/fastqc_umitools_trimgalore'          addParams( fastqc_options: modules['fastqc'], umitools_options: umitools_extract_options, trimgalore_options: trimgalore_options )
 include { CELLRANGER_VDJ              } from '../modules/local/cellranger_vdj'                             addParams( cellranger_options: modules['cellranger']                                                                             )
-include { CELLRANGER_AGGR             } from '../subworkflows/local/cellranger_aggr'                       addParams( cellranger_options: modules['cellranger']                                                                             )
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main' addParams( options: [publish_files : ['_versions.yml':'']]                                                                       )
 include { MULTIQC                     } from '../modules/local/multiqc'                                    addParams( options: multiqc_options                                                                                              )
 
