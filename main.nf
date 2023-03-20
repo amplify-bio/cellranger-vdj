@@ -27,13 +27,13 @@ WorkflowMain.initialise(workflow, params, log)
 ========================================================================================
 */
 
-include { CELLRANGER_VDJ } from './workflows/cellranger'
+include { CELLRANGER } from './workflows/cellranger'
 
 //
 // WORKFLOW: Run main cellranger analysis pipeline
 //
-workflow CELLRANGER {
-    CELLRANGER_VDJ ()
+workflow RUN_CELLRANGER {
+    CELLRANGER ()
 }
 
 /*
@@ -46,7 +46,7 @@ workflow CELLRANGER {
 // WORKFLOW: Execute a single named workflow for the pipeline
 //
 workflow {
-    CELLRANGER ()
+    RUN_CELLRANGER ()
 }
 
 /*
