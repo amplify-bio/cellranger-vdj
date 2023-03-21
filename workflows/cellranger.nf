@@ -28,8 +28,10 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 ========================================================================================
 */
 
-ch_multiqc_config        = file("$projectDir/assets/multiqc_config.yaml", checkIfExists: true)
+ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
 ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config) : Channel.empty()
+ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 
 /*
@@ -38,26 +40,11 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 ========================================================================================
 */
 
-// Don't overwrite global params.modules, create a copy instead and use that within the main script.
-def modules = params.modules.clone()
-
-def multiqc_options  = modules['multiqc']
-multiqc_options.args += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
-
-def umitools_extract_options    = modules['umitools_extract']
-umitools_extract_options.args  += params.umitools_extract_method ? Utils.joinModuleArgs(["--extract-method=${params.umitools_extract_method}"]) : ''
-umitools_extract_options.args  += params.umitools_bc_pattern     ? Utils.joinModuleArgs(["--bc-pattern='${params.umitools_bc_pattern}'"])       : ''
-if (params.save_umi_intermeds)  { umitools_extract_options.publish_files.put('fastq.gz','') }
-
-def trimgalore_options    = modules['trimgalore']
-trimgalore_options.args  += params.trim_nextseq > 0 ? Utils.joinModuleArgs(["--nextseq ${params.trim_nextseq}"]) : ''
-if (params.save_trimmed)  { trimgalore_options.publish_files.put('fq.gz','') }
-
-include { INPUT_CHECK                 } from '../subworkflows/local/input_check'                           addParams( options: [:]                                                                                                          )
-include { FASTQC_UMITOOLS_TRIMGALORE  } from '../subworkflows/nf-core/fastqc_umitools_trimgalore'          addParams( fastqc_options: modules['fastqc'], umitools_options: umitools_extract_options, trimgalore_options: trimgalore_options )
-include { CELLRANGER_VDJ              } from '../modules/local/cellranger_vdj'                             addParams( cellranger_options: modules['cellranger']                                                                             )
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main' addParams( options: [publish_files : ['_versions.yml':'']]                                                                       )
-include { MULTIQC                     } from '../modules/local/multiqc'                                    addParams( options: multiqc_options                                                                                              )
+include { INPUT_CHECK                 } from '../subworkflows/local/input_check'
+include { FASTQC_CHECK                } from '../subworkflows/local/fastqc'
+include { CELLRANGER_VDJ              } from '../modules/local/cellranger_vdj'
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main' 
+include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 
 
 /*
@@ -80,22 +67,23 @@ workflow CELLRANGER {
     .set{ ch_reads }
     ch_software_versions = ch_software_versions.mix(INPUT_CHECK.out.versions.ifEmpty(null))
 
-    //
-    // SUBWORKFLOW: Read QC, extract UMI and trim adapters
-    //
-    FASTQC_UMITOOLS_TRIMGALORE (
-        ch_reads,
-        params.skip_fastqc || params.skip_qc,
-        false,
-        true
-    )
-    ch_software_versions = ch_software_versions.mix(FASTQC_UMITOOLS_TRIMGALORE.out.versions.first().ifEmpty(null))
+
+    // Run FastQC
+    ch_multiqc_fastqc = Channel.empty()
+    if (!params.skip_fastqc) {
+        FASTQC_CHECK ( ch_reads )
+        ch_software_versions       = ch_software_versions.mix(FASTQC_CHECK.out.fastqc_version)
+        ch_multiqc_fastqc = FASTQC_CHECK.out.fastqc_zip
+    } else {
+        ch_multiqc_fastqc = Channel.empty()
+    }
 
     //
     // SUBWORKFLOW: CellRanger vdj 
     //
     CELLRANGER_VDJ (
-        ch_reads,
+        //ch_reads,
+        ch_reads.map{ meta, reads -> [meta + ["gem": meta.id, "samples": [meta.id]], reads] },
         ch_reference_path
     )
 
@@ -110,19 +98,42 @@ workflow CELLRANGER {
         ch_software_versions.unique().collectFile()
     )
 
+//    //
+//    // MODULE: MultiQC
+//    //
+//    workflow_summary    = WorkflowCellranger.paramsSummaryMultiqc(workflow, summary_params)
+//    ch_workflow_summary = Channel.value(workflow_summary)
+//
+//    MULTIQC (
+//        ch_multiqc_config,
+//        ch_multiqc_custom_config.collect().ifEmpty([]),
+//        CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect(),
+//        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'),
+//        FASTQC_UMITOOLS_TRIMGALORE.out.fastqc_zip.collect{it[1]}.ifEmpty([]),
+//        ch_cellranger_vdj_metrics.collect{it[1]}.ifEmpty([])
+//    )
+//    multiqc_report = MULTIQC.out.report.toList()
+
     //
     // MODULE: MultiQC
     //
     workflow_summary    = WorkflowCellranger.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
+    methods_description    = WorkflowCellranger.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
+    ch_methods_description = Channel.value(methods_description)
+
+    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_fastqc.collect{it[1]}.ifEmpty([]))
+
     MULTIQC (
-        ch_multiqc_config,
-        ch_multiqc_custom_config.collect().ifEmpty([]),
-        CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect(),
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'),
-        FASTQC_UMITOOLS_TRIMGALORE.out.fastqc_zip.collect{it[1]}.ifEmpty([]),
-        ch_cellranger_vdj_metrics.collect{it[1]}.ifEmpty([])
+        ch_multiqc_files.collect(),
+        ch_multiqc_config.toList(),
+        ch_multiqc_custom_config.toList(),
+        ch_multiqc_logo.toList()
     )
     multiqc_report = MULTIQC.out.report.toList()
 }

@@ -2,18 +2,34 @@
     "name": "klkeys/cellranger-vdj",
     "homePage": "https://github.com/klkeys/cellranger-vdj",
     "repos": {
-        "nf-core/modules": {
-            "custom/dumpsoftwareversions": {
-                "git_sha": "3aacd46da2b221ed47aaa05c413a828538d2c2ae"
+        "https://github.com/nf-core/modules.git": {
+            "modules": {
+                "nf-core": {
+                    "custom/dumpsoftwareversions": {
+                        "branch": "master",
+                        "git_sha": "b6d4d476aee074311c89d82a69c1921bd70c8180",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "fastqc": {
+                        "branch": "master",
+                        "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "multiqc": {
+                        "branch": "master",
+                        "git_sha": "ee80d14721e76e2e079103b8dcd5d57129e584ba",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    }
+                }
             },
-            "multiqc": {
-                "git_sha": "3aacd46da2b221ed47aaa05c413a828538d2c2ae"
-            },
-            "trimgalore": {
-                "git_sha": "3aacd46da2b221ed47aaa05c413a828538d2c2ae"
-            },
-            "umitools/extract": {
-                "git_sha": "81ed0e0ff2a138cd65146d167f614fa4f5871c8b"
+            "subworkflows": {
+                "nf-core": {}
             }
         }
     }

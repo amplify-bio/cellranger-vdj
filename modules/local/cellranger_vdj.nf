@@ -1,46 +1,36 @@
-// Import genetic module functions
-include { saveFiles; getSoftwareName; getProcessName; initOptions } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process CELLRANGER_VDJ {
-    tag "${meta.gem}-${meta.id}"
+    tag "${meta.id}"
     label 'cellranger'
-    publishDir "${params.outdir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getSoftwareName("${task.process}"), meta:meta, publish_by_meta:['id']) }
 
     // Exit if running this module with -profile conda / -profile mamba
     if (workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1) {
         exit 1, "CELLRANGER_VDJ module does not support Conda. Please use Docker / Singularity / Podman instead."
     }
 
-    container params.docker_cellranger 
+    container params.docker_cellranger
 
     input:
-    tuple val(meta), (path(reads), stageAs: 'fastqs/*')
+    tuple val(meta), path(reads)
     path  reference, stageAs: 'reference'
 
     output:
-    tuple val(meta), path("*${meta.gem}-${meta.id}/outs/*")                  , emit: outs
-    tuple val(meta), path("*${meta.gem}-${meta.id}/outs/metrics_summary.csv"), emit: summary_csv
-    path "versions.yml"                                                      , emit: versions
+    tuple val(meta), path("sample-${meta.id}/outs/*")                  , emit: outs
+    tuple val(meta), path("sample-${meta.id}/outs/metrics_summary.csv"), emit: summary_csv
+    path "versions.yml"                                                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
-    //def sample_arg = meta.samples.unique().join(",")
-    //def reference_name = reference.name
+    def sample_arg = meta.samples.unique().join(",")
     """
     cellranger \\
         vdj \\
-        --id="${meta.gem}-${meta.id}" \\
-        --fastqs=fastqs \\
+        --id="sample-${meta.id}" \\
+        --fastqs=. \\
+        --sample=$sample_arg \\
         --reference=reference \\
-        --sample="${meta.id}" \\
         --localcores=${task.cpus} \\
         --localmem=${task.memory.toGiga()} \\
         $args

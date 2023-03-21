@@ -1,4 +1,8 @@
-mport org.yaml.snakeyaml.Yaml
+//
+// This file holds several functions used within the nf-core pipeline template.
+//
+
+import org.yaml.snakeyaml.Yaml
 
 class NfcoreTemplate {
 
