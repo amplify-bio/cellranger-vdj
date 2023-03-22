@@ -4,7 +4,7 @@ report_comment: >
     <a href="https://github.com/klkeys/cellranger-vdj" target="_blank">documentation</a>.
 
 run_modules:
-    - custom_content 
+    - custom_content
     - fastqc
 
 module_order:
@@ -23,6 +23,6 @@ report_section_order:
 # DO show % Dups in the General Stats table
 table_columns_visible:
     FastQC:
-        percent_duplicates: true 
+        percent_duplicates: true
 
 export_plots: true

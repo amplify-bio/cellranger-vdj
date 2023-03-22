@@ -75,7 +75,7 @@
                     "description": "Docker image for MultiQC.",
                     "fa_icon": "fa fa-box",
                     "help_text": "Any suitable Docker image with MultiQC included. Beware throttling if pulling from DockerHub. If specifying a private Docker store, such as AWS ECR, then Nextflow Tower needs access credentials to pull containers.",
-                    "default":"quay.io/biocontainers/multiqc:1.11--pyhdfd78af_0", 
+                    "default":"quay.io/biocontainers/multiqc:1.11--pyhdfd78af_0",
                     "hidden": true
                 }
             }

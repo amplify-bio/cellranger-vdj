@@ -43,7 +43,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 include { INPUT_CHECK                 } from '../subworkflows/local/input_check'
 include { FASTQC_CHECK                } from '../subworkflows/local/fastqc'
 include { CELLRANGER_VDJ              } from '../modules/local/cellranger_vdj'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main' 
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 
 
@@ -79,7 +79,7 @@ workflow CELLRANGER {
     }
 
     //
-    // SUBWORKFLOW: CellRanger vdj 
+    // SUBWORKFLOW: CellRanger vdj
     //
     CELLRANGER_VDJ (
         //ch_reads,

@@ -28,7 +28,7 @@ We only need the latter here.
 ## Subsampling
 
 The original data are excessively large for nf-core testing purposes.
-Decrease the file size by subsampling the reads. 
+Decrease the file size by subsampling the reads.
 Note that `cellranger vdj` needs at least 10,000 reads to autodetect the library chemistry.
 Data here were subsampled as follows:
 

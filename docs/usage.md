@@ -23,7 +23,9 @@ results         # Finished results (configurable, see below)
 
 ### Updating the pipeline
 
-When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
+When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and caches it.
+For subsequent pipeline runs, Nextflow will always use the cached version if available - even if the pipeline has been updated since.
+To ensure that you're running the latest version of the pipeline, regularly update the cached version of the pipeline:
 
 ```bash
 nextflow pull klkeys/cellranger-vdj
@@ -31,7 +33,9 @@ nextflow pull klkeys/cellranger-vdj
 
 ### Reproducibility
 
-It's a good idea to specify a pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
+It is best practice to specify the pipeline version when running the pipeline on your data.
+This ensures that a specific version of the pipeline code and software are used when you run your pipeline.
+If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
 First, go to the [klkeys/cellranger-vdj releases page](https://github.com/klkeys/cellranger-vdj/releases) and find the latest version number - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`.
 
@@ -39,22 +43,19 @@ This version number will be logged in reports when you run the pipeline, so that
 
 ### Input sample sheet
 
-TODO: MODIFY THIS
 A sample sheet containing sample metadata and paths to the input fastq files is needed to run the pipeline and should be provided with the `--input` parameter.
 
 Example sample sheet:
 
 ```tsv
-gem fastq_id    fastqs  feature_types 
-gem1    subsampled_sc5p_v2_hs_B_1k_b    s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs  vdj_b
-gem1    subsampled_sc5p_v2_hs_B_1k_b    s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs  vdj_b
-gem2    subsampled_sc5p_v2_hs_B_1k_b    s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs  vdj_b
+sample	fastq_1	fastq_2
+subsampled_sc5p_v2_hs_B_1k_b	s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs/subsampled_sc5p_v2_hs_B_1k_b_S1_L001_R1_001.fastq.gz	s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs/subsampled_sc5p_v2_hs_B_1k_b_S1_L001_R2_001.fastq.gz
+subsampled_sc5p_v2_hs_B_1k_b	s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs/subsampled_sc5p_v2_hs_B_1k_b_S1_L002_R1_001.fastq.gz	s3://amplifybio-bioinformatics-genomic-references/test-data/cellranger-vdj/subsampled_sc5p_v2_hs_B_1k_b_fastqs/subsampled_sc5p_v2_hs_B_1k_b_S1_L002_R2_001.fastq.gz
 ```
 
-* `gem`: GEM ID. If samples were pooled in the same GEM, but sequenced in different lanes, then they will be processed together with `cellranger vdj`. For more info, see [here](https://support.10xgenomics.com/single-cell-vdj/software/pipelines/latest/what-is-cell-ranger).
-* `fastq\_id`: Sample ID.
-* `fastqs`: The directory where FASTQ files are stored. Can be a local path or a (full) cloud storage path.
-* `feature_types`: Either `vdj_b` or `vdj_t`. Ignored for now.
+* `sample`: Sample ID. If samples were pooled in the same GEM, but sequenced in different lanes, then they will be processed together with `cellranger vdj`. For more info, see [here](https://support.10xgenomics.com/single-cell-vdj/software/pipelines/latest/what-is-cell-ranger).
+* `fastq\_1`: Read 1 FASTQ for the current sample
+* `fastq\_2`: Read 2 FASTQ for the current sample
 
 ### Genome reference data
 
@@ -65,13 +66,14 @@ Genome reference data can be provided in several ways.
 The pipeline requires a V(D)J reference. 10X Genomics provides a prebuilt one [here](https://support.10xgenomics.com/single-cell-vdj/software/downloads/latest).
 Download it and stash it in a place where the pipeline can find it, either local storage or cloud storage.
 Point the pipeline to the saved reference with
+
 ```bash
     --transcriptome_reference path/to/reference
 ```
 
 ## Core Nextflow arguments
 
-> **NB:** These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen).
+> **NB:** These options are part of Nextflow and use a _single_ hyphen `-`. In contrast, pipeline parameters use a double-hyphen `--`.
 
 ### `-profile`
 
@@ -79,14 +81,18 @@ Use this parameter to choose a configuration profile. Profiles can give configur
 
 Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Docker, Singularity, Podman, Shifter, Charliecloud, Conda) - see below.
 
-> We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however when this is not possible, Conda is also supported.
+> We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility.
+When this is not possible, Conda is also supported.
+Note that `cellranger` is not supported on Conda; this pipeline _must_ use Docker or Singularity.
 
-The pipeline also dynamically loads configurations from [https://github.com/nf-core/configs](https://github.com/nf-core/configs) when it runs, making multiple config profiles for various institutional clusters available at run time. For more information and to see if your system is available in these configs please see the [nf-core/configs documentation](https://github.com/nf-core/configs#documentation).
+The pipeline also dynamically loads configurations from [https://github.com/nf-core/configs](https://github.com/nf-core/configs) when it runs, making multiple config profiles for various institutional clusters available at run time.
+For more information and to see if your system is available in these configs please see the [nf-core/configs documentation](https://github.com/nf-core/configs#documentation).
 
 Note that multiple profiles can be loaded, for example: `-profile test,docker` - the order of arguments is important!
 They are loaded in sequence, so later profiles can overwrite earlier profiles.
 
-If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the `PATH`. This is _not_ recommended.
+If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the `PATH`.
+Running Nextflow without a specified `-profile` is _not_ recommended.
 
 * `docker`
   * A generic configuration profile to be used with [Docker](https://docker.com/)
@@ -123,9 +129,13 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 
 #### Custom resource requests
 
-Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if the job exits with an error code of `143` (exceeded requested resources) it will automatically resubmit with higher requests (2 x original, then 3 x original). If it still fails after three times then the pipeline is stopped.
+Each step in the pipeline has a default set of requirements for number of CPUs, memory and time.
+For most of the steps in the pipeline, if the job exits with an error code of `143` (exceeded requested resources) it will automatically resubmit with higher requests (2x original, then 3x original).
+If it still fails after three times then the pipeline is stopped.
 
-Whilst these default requirements will hopefully work for most people with most data, you may find that you want to customise the compute resources that the pipeline requests. You can do this by creating a custom config file. For example, to give the workflow process `star` 32GB of memory, you could use the following config:
+While these default requirements will hopefully work for most people with most data, you may find that you want to customise the compute resources that the pipeline requests.
+You can do this by creating a custom config file.
+For example, to give the workflow process `star` 32GB of memory, you could use the following config:
 
 ```nextflow
 process {
@@ -135,11 +145,14 @@ process {
 }
 ```
 
-To find the exact name of a process you wish to modify the compute resources, check the live-status of a nextflow run displayed on your terminal or check the nextflow error for a line like so: `Error executing process > 'bwa'`. In this case the name to specify in the custom config file is `bwa`.
+To find the exact name of a process you wish to modify the compute resources, check the live-status of a nextflow run displayed on your terminal or check the nextflow error for a line like so: `Error executing process > 'bwa'`.
+In this case the name to specify in the custom config file is `bwa`.
 
 See the main [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) for more information.
 
-If you are likely to be running `nf-core` pipelines regularly it may be a good idea to request that your custom config file is uploaded to the `nf-core/configs` git repository. Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition above). You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
+If you will run `nf-core` pipelines regularly, then it may be wise to request that your custom config file is uploaded to the `nf-core/configs` git repository.
+Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition above).
+You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
 
 If you have any questions or issues please send us a message on [Slack](https://nf-co.re/join/slack) on the [`#configs` channel](https://nfcore.slack.com/channels/configs).
 
@@ -147,9 +160,10 @@ If you have any questions or issues please send us a message on [Slack](https://
 
 Nextflow handles job submissions and supervises the running jobs. The Nextflow process must run until the pipeline is finished.
 
-The Nextflow `-bg` flag launches Nextflow in the background, detached from your terminal so that the workflow does not stop if you log out of your session. The logs are saved to a file.
+The Nextflow `-bg` flag launches Nextflow in the background, detached from your terminal so that the workflow does not stop if you log out of your session.
+The logs are saved to a file.
 
-Alternatively, you can use `screen` / `tmux` or similar tool to create a detached session which you can log back into at a later time.
+Alternatively, you can use `screen` / `tmux` or a similar tool to create a detached session which you can log back into at a later time.
 Some HPC setups also allow you to run nextflow within a cluster job submitted your job scheduler (from where it submits more jobs).
 
 #### Nextflow memory requirements

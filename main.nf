@@ -3,7 +3,7 @@
 ========================================================================================
                         klkeys/cellranger-vdj
 ========================================================================================
-    Analysis Pipeline for 10X Cell Ranger vdj 
+    Analysis Pipeline for 10X Cell Ranger vdj
     #### Homepage / Documentation
     https://github.com/klkeys/cellranger-vdj
 ----------------------------------------------------------------------------------------
