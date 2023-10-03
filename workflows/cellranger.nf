@@ -5,7 +5,7 @@
 */
 
 if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
-if (params.transcriptome_reference) { ch_reference_path = file(params.transcriptome_reference) } else { exit 1, 'Transcriptome reference not specified!' }
+if (params.vdj_reference) { ch_reference_path = file(params.vdj_reference) } else { exit 1, 'vdj reference not specified!' }
 
 
 /*

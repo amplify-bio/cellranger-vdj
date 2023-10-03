@@ -16,8 +16,8 @@ class WorkflowCellranger {
             System.exit(1)
         }
 
-        if (!params.transcriptome_reference) {
-            log.error "No transcriptome reference tarball specified!"
+        if (!params.vdj_reference) {
+            log.error "No VDJ reference tarball specified!"
             System.exit(1)
         }
 

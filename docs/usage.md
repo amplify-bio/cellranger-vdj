@@ -68,7 +68,7 @@ Download it and stash it in a place where the pipeline can find it, either local
 Point the pipeline to the saved reference with
 
 ```bash
-    --transcriptome_reference path/to/reference
+    --vdj_reference path/to/reference
 ```
 
 ## Core Nextflow arguments
